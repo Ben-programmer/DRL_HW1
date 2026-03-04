@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grid Map Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+
+<body>
+  <div class="scanlines"></div>
+
+  <div class="container">
+    <header>
+      <h1 class="title">&#9632; GRID MAP GENERATOR &#9632;</h1>
+      <div class="subtitle">// PIXEL DUNGEON BUILDER v1.0 //</div>
+    </header>
+
+    <div class="control-panel">
+      <div class="panel-header">[ CONFIGURATION ]</div>
+      <div class="controls">
+        <label class="pixel-label">GRID SIZE (n):</label>
+        <div class="input-group">
+          <input type="number" id="gridSize" min="5" max="9" value="5" class="pixel-input" />
+          <button id="generateBtn" class="pixel-btn">&#9658; GENERATE</button>
+        </div>
+        <div class="range-hint">[ MIN: 5 &nbsp;|&nbsp; MAX: 9 ]</div>
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <div class="status-item">
+        <span class="status-dot start-dot"></span>
+        START: <span id="startInfo">NOT SET</span>
+      </div>
+      <div class="status-item">
+        <span class="status-dot end-dot"></span>
+        END: <span id="endInfo">NOT SET</span>
+      </div>
+      <div class="status-item">
+        <span class="status-dot obstacle-dot"></span>
+        OBSTACLES: <span id="obstacleInfo">0 / 0</span>
+      </div>
+    </div>
+
+    <div class="mode-selector">
+      <button class="mode-btn active" id="modeStart" onclick="setMode('start')">
+        &#9632; SET START
+      </button>
+      <button class="mode-btn" id="modeEnd" onclick="setMode('end')">
+        &#9632; SET END
+      </button>
+      <button class="mode-btn" id="modeObstacle" onclick="setMode('obstacle')">
+        &#9632; SET OBSTACLE
+      </button>
+      <button class="mode-btn reset-btn" onclick="resetGrid()">
+        &#9670; RESET
+      </button>
+      <button class="mode-btn eval-btn" id="evaluateBtn" onclick="runEvaluate()">
+        &#9654; EVALUATE
+      </button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="legend-box start-box"></span> START</div>
+      <div class="legend-item"><span class="legend-box end-box"></span> END</div>
+      <div class="legend-item"><span class="legend-box obstacle-box"></span> OBSTACLE</div>
+      <div class="legend-item"><span class="legend-box empty-box"></span> EMPTY</div>
+    </div>
+
+    <div class="grid-wrapper">
+      <div id="gridContainer" class="grid-container"></div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-row">
+        <span class="info-label">&#9474; GRID:</span>
+        <span id="gridDim" class="info-value">5 x 5</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">&#9474; TOTAL CELLS:</span>
+        <span id="totalCells" class="info-value">25</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">&#9474; MAX OBSTACLES:</span>
+        <span id="maxObs" class="info-value">3</span>
+      </div>
+      <div class="info-row" id="modeDisplay">
+        <span class="info-label">&#9474; CURRENT MODE:</span>
+        <span id="currentMode" class="info-value mode-start">START</span>
+      </div>
+    </div>
+
+    <!-- ===== EVALUATION RESULTS ===== -->
+    <div id="evalSection" class="eval-section" style="display:none;">
+      <div class="eval-header">
+        <span class="eval-title">&#9654; POLICY EVALUATION RESULTS</span>
+        <span class="eval-subtitle">// &gamma;=0.9 | convergence &theta;=1e-6 //</span>
+      </div>
+      <div class="matrices-row">
+        <!-- Value Matrix -->
+        <div class="matrix-block">
+          <div class="matrix-title">[ VALUE MATRIX V(s) ]</div>
+          <div id="valueGrid" class="matrix-grid"></div>
+        </div>
+        <!-- Policy Matrix -->
+        <div class="matrix-block">
+          <div class="matrix-title">[ POLICY MATRIX &pi;(s) ]</div>
+          <div id="policyGrid" class="matrix-grid"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/static/js/grid.js"></script>
+</body>
+
+</html>

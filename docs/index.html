@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grid Map Generator — Deep RL HW1</title>
+    <meta name="description"
+        content="Interactive n×n Grid Map Generator with Policy Evaluation for Deep Reinforcement Learning." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* ===== PIXEL ART THEME ===== */
+        :root {
+            --px-bg: #0a0a1a;
+            --px-panel: #111128;
+            --px-border: #3a3a6a;
+            --px-accent: #4a4aff;
+            --px-accent2: #00ffcc;
+            --px-text: #c8c8ff;
+            --px-dim: #6868aa;
+            --px-start: #1a8c1a;
+            --px-start-bg: #0d4d0d;
+            --px-end: #cc2222;
+            --px-end-bg: #5c0d0d;
+            --px-obstacle: #666680;
+            --px-obstacle-bg: #2a2a3a;
+            --px-cell: #1a1a2e;
+            --px-cell-hover: #252540;
+            --px-shadow: #4a4aff88;
+            --px-grid-border: #3a3a6a;
+            --cell-size: 60px;
+            --pixel-border: 3px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background-color: var(--px-bg);
+            color: var(--px-text);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: radial-gradient(ellipse at 20% 20%, #1a1a4a 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, #0a2a1a 0%, transparent 50%)
+        }
+
+        .scanlines {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .12) 2px, rgba(0, 0, 0, .12) 4px)
+        }
+
+        .container {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 28px 20px
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 28px
+        }
+
+        .title {
+            font-size: 16px;
+            color: var(--px-accent2);
+            text-shadow: 0 0 10px var(--px-accent2), 0 0 20px var(--px-accent2), 4px 4px 0 #004433;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            animation: glitch 4s infinite
+        }
+
+        .subtitle {
+            color: var(--px-dim);
+            font-size: 8px;
+            letter-spacing: 3px
+        }
+
+        @keyframes glitch {
+
+            0%,
+            95%,
+            100% {
+                text-shadow: 0 0 10px var(--px-accent2), 0 0 20px var(--px-accent2), 4px 4px 0 #004433
+            }
+
+            96% {
+                text-shadow: -3px 0 #ff0080, 3px 0 #00ffff, 0 0 10px var(--px-accent2)
+            }
+
+            97% {
+                text-shadow: 3px 0 #ff0080, -3px 0 #00ffff, 0 0 10px var(--px-accent2)
+            }
+        }
+
+        /* CONTROL PANEL */
+        .control-panel {
+            background: var(--px-panel);
+            border: var(--pixel-border) solid var(--px-accent);
+            box-shadow: inset -2px -2px 0 #06060f, inset 2px 2px 0 #2a2a50, 0 0 24px var(--px-shadow);
+            margin-bottom: 16px
+        }
+
+        .panel-header {
+            background: var(--px-accent);
+            color: #fff;
+            font-size: 9px;
+            padding: 6px 12px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000044
+        }
+
+        .controls {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap
+        }
+
+        .pixel-label {
+            color: var(--px-accent2);
+            font-size: 9px;
+            white-space: nowrap
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .pixel-input {
+            background: #05050f;
+            border: var(--pixel-border) solid var(--px-dim);
+            color: var(--px-accent2);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            width: 64px;
+            padding: 6px 10px;
+            outline: none;
+            text-align: center;
+            box-shadow: inset 2px 2px 0 #000
+        }
+
+        .pixel-input:focus {
+            border-color: var(--px-accent2);
+            box-shadow: inset 2px 2px 0 #000, 0 0 10px rgba(0, 255, 204, .3)
+        }
+
+        .pixel-input::-webkit-inner-spin-button {
+            -webkit-appearance: none
+        }
+
+        .pixel-btn {
+            background: var(--px-accent);
+            border: var(--pixel-border) solid #8080ff;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            padding: 8px 14px;
+            cursor: pointer;
+            box-shadow: inset -2px -2px 0 #000044, inset 2px 2px 0 #8080ff;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            transition: transform .05s
+        }
+
+        .pixel-btn:hover {
+            background: #5a5aff;
+            box-shadow: inset -2px -2px 0 #000044, inset 2px 2px 0 #aaaaf0, 0 0 12px rgba(74, 74, 255, .6)
+        }
+
+        .pixel-btn:active {
+            transform: translate(2px, 2px)
+        }
+
+        .range-hint {
+            color: var(--px-dim);
+            font-size: 8px;
+            letter-spacing: 1px
+        }
+
+        /* STATUS */
+        .status-bar {
+            background: #05050f;
+            border: var(--pixel-border) solid var(--px-border);
+            border-bottom: none;
+            display: flex
+        }
+
+        .status-item {
+            flex: 1;
+            padding: 7px 10px;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-right: 2px solid var(--px-border);
+            color: var(--px-dim)
+        }
+
+        .status-item:last-child {
+            border-right: none
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            display: inline-block;
+            border: 2px solid currentColor
+        }
+
+        .start-dot {
+            background: var(--px-start);
+            border-color: #2aaa2a
+        }
+
+        .end-dot {
+            background: var(--px-end);
+            border-color: #ee3333
+        }
+
+        .obstacle-dot {
+            background: var(--px-obstacle);
+            border-color: #9999bb
+        }
+
+        #startInfo,
+        #endInfo,
+        #obstacleInfo {
+            color: var(--px-accent2);
+            font-size: 8px
+        }
+
+        /* MODE SELECTOR */
+        .mode-selector {
+            display: flex;
+            margin-bottom: 14px;
+            border: var(--pixel-border) solid var(--px-border);
+            overflow: hidden
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: var(--px-panel);
+            border: none;
+            border-right: 2px solid var(--px-border);
+            color: var(--px-dim);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            padding: 9px 2px;
+            cursor: pointer;
+            transition: background .1s, color .1s;
+            letter-spacing: .3px
+        }
+
+        .mode-btn:last-child {
+            border-right: none
+        }
+
+        .mode-btn:hover {
+            background: var(--px-cell-hover);
+            color: var(--px-text)
+        }
+
+        .mode-btn.active[id="modeStart"] {
+            background: var(--px-start-bg);
+            color: #4cff4c;
+            border-bottom: 3px solid var(--px-start);
+            text-shadow: 0 0 6px #0f0
+        }
+
+        .mode-btn.active[id="modeEnd"] {
+            background: var(--px-end-bg);
+            color: #ff6666;
+            border-bottom: 3px solid var(--px-end);
+            text-shadow: 0 0 6px red
+        }
+
+        .mode-btn.active[id="modeObstacle"] {
+            background: var(--px-obstacle-bg);
+            color: #aac;
+            border-bottom: 3px solid var(--px-obstacle)
+        }
+
+        .reset-btn {
+            background: #1a0505;
+            color: #f44
+        }
+
+        .reset-btn:hover {
+            background: #2a0808;
+            color: #f66;
+            text-shadow: 0 0 6px red
+        }
+
+        .eval-btn {
+            background: #05150f;
+            color: #0fc
+        }
+
+        .eval-btn:hover {
+            background: #0a2d20;
+            color: #8fe;
+            text-shadow: 0 0 8px #0fc
+        }
+
+        .eval-btn.loading {
+            color: var(--px-dim);
+            animation: blink .6s step-end infinite
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        /* LEGEND */
+        .legend {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 8px;
+            color: var(--px-dim)
+        }
+
+        .legend-box {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--px-dim);
+            display: inline-block
+        }
+
+        .start-box {
+            background: var(--px-start);
+            border-color: #2aaa2a
+        }
+
+        .end-box {
+            background: var(--px-end);
+            border-color: #ee3333
+        }
+
+        .obstacle-box {
+            background: var(--px-obstacle);
+            border-color: #9999bb
+        }
+
+        .empty-box {
+            background: var(--px-cell);
+            border-color: var(--px-border)
+        }
+
+        /* GRID */
+        .grid-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px
+        }
+
+        .grid-container {
+            display: inline-grid;
+            gap: 0;
+            border: var(--pixel-border) solid var(--px-accent);
+            box-shadow: 0 0 30px rgba(74, 74, 255, .25), 0 0 60px rgba(74, 74, 255, .1)
+        }
+
+        .grid-cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background: var(--px-cell);
+            border: 1px solid var(--px-grid-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: var(--px-dim);
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background .08s, color .08s
+        }
+
+        .grid-cell:hover {
+            background: var(--px-cell-hover);
+            color: var(--px-text);
+            z-index: 1;
+            box-shadow: inset 0 0 0 2px var(--px-accent2)
+        }
+
+        .grid-cell.start {
+            background: var(--px-start);
+            color: #afffaf;
+            border-color: #2aaa2a;
+            box-shadow: inset -2px -2px 0 #0a3a0a, inset 2px 2px 0 #3aee3a, 0 0 15px rgba(26, 140, 26, .6);
+            text-shadow: 0 0 6px #0f0;
+            animation: pulse-start 1.5s infinite
+        }
+
+        .grid-cell.end {
+            background: var(--px-end);
+            color: #ffafaf;
+            border-color: #ee3333;
+            box-shadow: inset -2px -2px 0 #3a0a0a, inset 2px 2px 0 #ee3a3a, 0 0 15px rgba(204, 34, 34, .6);
+            text-shadow: 0 0 6px red;
+            animation: pulse-end 1.5s infinite
+        }
+
+        .grid-cell.obstacle {
+            background: var(--px-obstacle);
+            color: #cce;
+            border-color: #9999bb;
+            box-shadow: inset -2px -2px 0 #22223a, inset 2px 2px 0 #aaac
+        }
+
+        .grid-cell.start::before,
+        .grid-cell.end::before {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border: 2px solid rgba(255, 255, 255, .2);
+            pointer-events: none
+        }
+
+        @keyframes pulse-start {
+
+            0%,
+            100% {
+                box-shadow: inset -2px -2px 0 #0a3a0a, inset 2px 2px 0 #3aee3a, 0 0 10px rgba(26, 140, 26, .4)
+            }
+
+            50% {
+                box-shadow: inset -2px -2px 0 #0a3a0a, inset 2px 2px 0 #3aee3a, 0 0 25px rgba(26, 140, 26, .9)
+            }
+        }
+
+        @keyframes pulse-end {
+
+            0%,
+            100% {
+                box-shadow: inset -2px -2px 0 #3a0a0a, inset 2px 2px 0 #ee3a3a, 0 0 10px rgba(204, 34, 34, .4)
+            }
+
+            50% {
+                box-shadow: inset -2px -2px 0 #3a0a0a, inset 2px 2px 0 #ee3a3a, 0 0 25px rgba(204, 34, 34, .9)
+            }
+        }
+
+        /* INFO */
+        .info-panel {
+            background: #05050f;
+            border: var(--pixel-border) solid var(--px-border);
+            padding: 10px 18px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: space-around
+        }
+
+        .info-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 8px
+        }
+
+        .info-label {
+            color: var(--px-dim)
+        }
+
+        .info-value {
+            color: var(--px-accent2);
+            font-size: 10px
+        }
+
+        .mode-start {
+            color: #4cff4c;
+            text-shadow: 0 0 6px #0f0
+        }
+
+        .mode-end {
+            color: #f66;
+            text-shadow: 0 0 6px red
+        }
+
+        .mode-obstacle {
+            color: #aac
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--px-panel);
+            border: var(--pixel-border) solid var(--px-accent);
+            color: var(--px-accent2);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            padding: 10px 18px;
+            z-index: 10000;
+            box-shadow: 0 0 20px var(--px-shadow);
+            animation: slideIn .2s steps(4, end);
+            letter-spacing: 1px;
+            max-width: 250px;
+            line-height: 1.8
+        }
+
+        .toast.error {
+            border-color: var(--px-end);
+            color: #f88;
+            box-shadow: 0 0 20px rgba(204, 34, 34, .4)
+        }
+
+        .toast.success {
+            border-color: var(--px-start);
+            color: #8f8;
+            box-shadow: 0 0 20px rgba(26, 140, 26, .4)
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%)
+            }
+
+            to {
+                transform: translateX(0)
+            }
+        }
+
+        /* EVAL SECTION */
+        .eval-section {
+            margin-top: 24px;
+            border: var(--pixel-border) solid var(--px-accent2);
+            background: var(--px-panel);
+            box-shadow: inset -2px -2px 0 #06060f, inset 2px 2px 0 #133322, 0 0 30px rgba(0, 255, 204, .12);
+            animation: fadeInUp .4s ease
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .eval-header {
+            background: linear-gradient(90deg, #004433, #002244);
+            border-bottom: 2px solid var(--px-accent2);
+            padding: 8px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px
+        }
+
+        .eval-title {
+            color: var(--px-accent2);
+            font-size: 9px;
+            text-shadow: 0 0 8px var(--px-accent2);
+            letter-spacing: 1px
+        }
+
+        .eval-subtitle {
+            color: var(--px-dim);
+            font-size: 7px;
+            letter-spacing: 2px
+        }
+
+        .matrices-row {
+            display: flex;
+            padding: 18px;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px
+        }
+
+        .matrix-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px
+        }
+
+        .matrix-title {
+            color: var(--px-accent2);
+            font-size: 8px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 6px rgba(0, 255, 204, .4)
+        }
+
+        .matrix-grid {
+            display: inline-grid;
+            gap: 0;
+            border: var(--pixel-border) solid var(--px-accent2);
+            box-shadow: 0 0 20px rgba(0, 255, 204, .15)
+        }
+
+        .m-cell {
+            border: 1px solid #2a2a50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'VT323', monospace;
+            user-select: none;
+            transition: background .15s
+        }
+
+        .m-cell.val-cell {
+            font-size: 13px;
+            color: var(--px-accent2);
+            background: var(--px-cell);
+            padding: 4px;
+            flex-direction: column;
+            gap: 1px
+        }
+
+        .m-cell.pol-cell {
+            font-size: 26px;
+            color: var(--px-text);
+            background: var(--px-cell)
+        }
+
+        .m-cell.m-obstacle {
+            background: var(--px-obstacle) !important;
+            color: #cce !important;
+            box-shadow: inset -2px -2px 0 #22223a, inset 2px 2px 0 #aaac
+        }
+
+        .m-cell.m-start {
+            background: var(--px-start) !important;
+            color: #afffaf !important;
+            box-shadow: inset -2px -2px 0 #0a3a0a, inset 2px 2px 0 #3aee3a;
+            font-size: 11px
+        }
+
+        .m-cell.m-end {
+            background: var(--px-end) !important;
+            color: #ffafaf !important;
+            box-shadow: inset -2px -2px 0 #3a0a0a, inset 2px 2px 0 #ee3a3a;
+            font-size: 11px
+        }
+
+        .m-cell.val-pos {
+            color: #44ffaa
+        }
+
+        .m-cell.val-neg {
+            color: #f65
+        }
+
+        .m-cell.val-zero {
+            color: var(--px-dim)
+        }
+
+        .val-num {
+            font-size: 13px;
+            line-height: 1
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--px-bg)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--px-border);
+            border: 2px solid var(--px-bg)
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--px-accent)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="scanlines"></div>
+    <div class="container">
+        <header>
+            <h1 class="title">&#9632; GRID MAP GENERATOR &#9632;</h1>
+            <div class="subtitle">// DEEP RL HW1 — PIXEL DUNGEON BUILDER v1.0 //</div>
+        </header>
+
+        <div class="control-panel">
+            <div class="panel-header">[ CONFIGURATION ]</div>
+            <div class="controls">
+                <label class="pixel-label">GRID SIZE (n):</label>
+                <div class="input-group">
+                    <input type="number" id="gridSize" min="5" max="9" value="5" class="pixel-input" />
+                    <button id="generateBtn" class="pixel-btn">&#9658; GENERATE</button>
+                </div>
+                <div class="range-hint">[ MIN: 5 &nbsp;|&nbsp; MAX: 9 ]</div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item"><span class="status-dot start-dot"></span>START: <span id="startInfo">NOT
+                    SET</span></div>
+            <div class="status-item"><span class="status-dot end-dot"></span>END: <span id="endInfo">NOT SET</span>
+            </div>
+            <div class="status-item"><span class="status-dot obstacle-dot"></span>OBSTACLES: <span id="obstacleInfo">0 /
+                    0</span></div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" id="modeStart" onclick="setMode('start')">&#9632; SET START</button>
+            <button class="mode-btn" id="modeEnd" onclick="setMode('end')">&#9632; SET END</button>
+            <button class="mode-btn" id="modeObstacle" onclick="setMode('obstacle')">&#9632; SET OBSTACLE</button>
+            <button class="mode-btn reset-btn" onclick="resetGrid()">&#9670; RESET</button>
+            <button class="mode-btn eval-btn" id="evaluateBtn" onclick="runEvaluate()">&#9654; EVALUATE</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><span class="legend-box start-box"></span>START</div>
+            <div class="legend-item"><span class="legend-box end-box"></span>END</div>
+            <div class="legend-item"><span class="legend-box obstacle-box"></span>OBSTACLE</div>
+            <div class="legend-item"><span class="legend-box empty-box"></span>EMPTY</div>
+        </div>
+
+        <div class="grid-wrapper">
+            <div id="gridContainer" class="grid-container"></div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-row"><span class="info-label">&#9474; GRID:</span><span id="gridDim" class="info-value">5 x
+                    5</span></div>
+            <div class="info-row"><span class="info-label">&#9474; TOTAL CELLS:</span><span id="totalCells"
+                    class="info-value">25</span></div>
+            <div class="info-row"><span class="info-label">&#9474; MAX OBSTACLES:</span><span id="maxObs"
+                    class="info-value">3</span></div>
+            <div class="info-row"><span class="info-label">&#9474; CURRENT MODE:</span><span id="currentMode"
+                    class="info-value mode-start">START</span></div>
+        </div>
+
+        <div id="evalSection" class="eval-section" style="display:none;">
+            <div class="eval-header">
+                <span class="eval-title">&#9654; POLICY EVALUATION RESULTS</span>
+                <span class="eval-subtitle">// &gamma;=0.9 | convergence &theta;=1e-6 //</span>
+            </div>
+            <div class="matrices-row">
+                <div class="matrix-block">
+                    <div class="matrix-title">[ VALUE MATRIX V(s) ]</div>
+                    <div id="valueGrid" class="matrix-grid"></div>
+                </div>
+                <div class="matrix-block">
+                    <div class="matrix-title">[ POLICY MATRIX &pi;(s) ]</div>
+                    <div id="policyGrid" class="matrix-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== POLICY EVALUATION (pure JS - same logic as Python backend) =====
+        const ACTIONS = ['U', 'D', 'L', 'R'];
+        const ARROW = { U: '↑', D: '↓', L: '←', R: '→' };
+
+        function getNeighbor(s, n, action) {
+            let row = Math.floor(s / n), col = s % n;
+            if (action === 'U') row = Math.max(row - 1, 0);
+            else if (action === 'D') row = Math.min(row + 1, n - 1);
+            else if (action === 'L') col = Math.max(col - 1, 0);
+            else col = Math.min(col + 1, n - 1);
+            return row * n + col;
+        }
+
+        function policyEvaluation(n, startS, endS, obsSet, gamma = 0.9, theta = 1e-6, maxIter = 2000) {
+            const total = n * n;
+            const terminal = new Set([endS, ...obsSet]);
+            let V = new Array(total).fill(0);
+            V[endS] = 1.0;
+            obsSet.forEach(s => V[s] = -1.0);
+
+            for (let iter = 0; iter < maxIter; iter++) {
+                let delta = 0;
+                const newV = [...V];
+                for (let s = 0; s < total; s++) {
+                    if (terminal.has(s)) continue;
+                    let val = 0;
+                    for (const a of ACTIONS) {
+                        const s2 = getNeighbor(s, n, a);
+                        const r = s2 === endS ? 1.0 : obsSet.has(s2) ? -1.0 : -0.04;
+                        val += 0.25 * (r + gamma * V[s2]);
+                    }
+                    newV[s] = val;
+                    delta = Math.max(delta, Math.abs(newV[s] - V[s]));
+                }
+                V = newV;
+                if (delta < theta) break;
+            }
+
+            const policy = [];
+            for (let s = 0; s < total; s++) {
+                if (terminal.has(s)) { policy.push(null); continue; }
+                let bestA = null, bestV = -Infinity;
+                for (const a of ACTIONS) {
+                    const s2 = getNeighbor(s, n, a);
+                    const r = s2 === endS ? 1.0 : obsSet.has(s2) ? -1.0 : -0.04;
+                    const q = r + gamma * V[s2];
+                    if (q > bestV) { bestV = q; bestA = a; }
+                }
+                policy.push(ARROW[bestA]);
+            }
+            return { values: V, policy };
+        }
+
+        // ===== STATE =====
+        let n = 5, maxObstacles = 3, mode = 'start', startCell = null, endCell = null;
+        let obstacles = new Set();
+
+        function setMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('mode' + m[0].toUpperCase() + m.slice(1)).classList.add('active');
+            const el = document.getElementById('currentMode');
+            el.textContent = m.toUpperCase();
+            el.className = 'info-value mode-' + m;
+        }
+
+        function generateGrid(size) {
+            n = size; maxObstacles = n - 2; startCell = null; endCell = null; obstacles = new Set();
+            const c = document.getElementById('gridContainer');
+            c.style.gridTemplateColumns = `repeat(${n},var(--cell-size))`;
+            c.innerHTML = '';
+            for (let i = 1; i <= n * n; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('grid-cell'); cell.dataset.id = i; cell.textContent = i;
+                cell.addEventListener('click', () => handleCellClick(i, cell));
+                c.appendChild(cell);
+            }
+            document.getElementById('gridDim').textContent = `${n} x ${n}`;
+            document.getElementById('totalCells').textContent = n * n;
+            document.getElementById('maxObs').textContent = maxObstacles;
+            document.getElementById('evalSection').style.display = 'none';
+            updateStatus();
+        }
+
+        function handleCellClick(id, cell) {
+            if (mode === 'start') {
+                if (id === endCell) { showToast('Cannot place START on END!', 'error'); return; }
+                if (startCell !== null) { const o = document.querySelector(`.grid-cell[data-id="${startCell}"]`); if (o) o.classList.remove('start'); }
+                if (obstacles.has(id)) { obstacles.delete(id); cell.classList.remove('obstacle'); }
+                startCell = id; cell.classList.remove('end'); cell.classList.add('start');
+                showToast(`START → cell ${id}`, 'success');
+            } else if (mode === 'end') {
+                if (id === startCell) { showToast('Cannot place END on START!', 'error'); return; }
+                if (endCell !== null) { const o = document.querySelector(`.grid-cell[data-id="${endCell}"]`); if (o) o.classList.remove('end'); }
+                if (obstacles.has(id)) { obstacles.delete(id); cell.classList.remove('obstacle'); }
+                endCell = id; cell.classList.remove('start'); cell.classList.add('end');
+                showToast(`END → cell ${id}`, 'success');
+            } else {
+                if (id === startCell || id === endCell) { showToast('Cannot place here!', 'error'); return; }
+                if (obstacles.has(id)) { obstacles.delete(id); cell.classList.remove('obstacle'); showToast(`Obstacle removed cell ${id}`, 'success'); }
+                else {
+                    if (obstacles.size >= maxObstacles) { showToast(`Max ${maxObstacles} obstacles!`, 'error'); return; }
+                    obstacles.add(id); cell.classList.add('obstacle');
+                    showToast(`Obstacle at cell ${id}`, 'success');
+                }
+            }
+            updateStatus();
+        }
+
+        function resetGrid() {
+            startCell = null; endCell = null; obstacles = new Set();
+            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('start', 'end', 'obstacle'));
+            document.getElementById('evalSection').style.display = 'none';
+            updateStatus(); showToast('Grid reset!', 'success');
+        }
+
+        function updateStatus() {
+            document.getElementById('startInfo').textContent = startCell ? `CELL ${startCell}` : 'NOT SET';
+            document.getElementById('endInfo').textContent = endCell ? `CELL ${endCell}` : 'NOT SET';
+            document.getElementById('obstacleInfo').textContent = `${obstacles.size} / ${maxObstacles}`;
+        }
+
+        function runEvaluate() {
+            if (!startCell || !endCell) { showToast('Set START and END first!', 'error'); return; }
+            const btn = document.getElementById('evaluateBtn');
+            btn.classList.add('loading'); btn.textContent = '⏳ RUNNING...';
+
+            // Run in next tick so UI updates
+            setTimeout(() => {
+                const startS = startCell - 1, endS = endCell - 1;
+                const obsSet = new Set([...obstacles].map(o => o - 1));
+                const { values, policy } = policyEvaluation(n, startS, endS, obsSet);
+                renderMatrices(n, values, policy, startS, endS, obsSet);
+                btn.classList.remove('loading'); btn.textContent = '▶ EVALUATE';
+                showToast('Evaluation complete!', 'success');
+            }, 30);
+        }
+
+        function renderMatrices(N, values, policy, startS, endS, obsSet) {
+            const cw = Math.max(62, Math.floor(440 / N));
+            const ch = Math.max(44, Math.floor(260 / N));
+            function cellType(s) { if (s === startS) return 'm-start'; if (s === endS) return 'm-end'; if (obsSet.has(s)) return 'm-obstacle'; return ''; }
+
+            const vg = document.getElementById('valueGrid');
+            vg.style.gridTemplateColumns = `repeat(${N},${cw}px)`; vg.innerHTML = '';
+            for (let s = 0; s < N * N; s++) {
+                const c = document.createElement('div');
+                c.classList.add('m-cell', 'val-cell');
+                c.style.width = cw + 'px'; c.style.height = ch + 'px';
+                const t = cellType(s);
+                if (t) {
+                    c.classList.add(t);
+                    if (t === 'm-start') c.innerHTML = '<span>S</span><span class="val-num">' + values[s].toFixed(2) + '</span>';
+                    else if (t === 'm-end') c.innerHTML = '<span>G</span><span class="val-num">' + values[s].toFixed(2) + '</span>';
+                    else c.innerHTML = '<span>■</span>';
+                } else {
+                    const v = values[s];
+                    c.classList.add(v > 0.05 ? 'val-pos' : v < -0.05 ? 'val-neg' : 'val-zero');
+                    c.innerHTML = `<span class="val-num">${v.toFixed(3)}</span>`;
+                }
+                vg.appendChild(c);
+            }
+
+            const pg = document.getElementById('policyGrid');
+            pg.style.gridTemplateColumns = `repeat(${N},${cw}px)`; pg.innerHTML = '';
+            for (let s = 0; s < N * N; s++) {
+                const c = document.createElement('div');
+                c.classList.add('m-cell', 'pol-cell');
+                c.style.width = cw + 'px'; c.style.height = ch + 'px';
+                const t = cellType(s);
+                if (t) { c.classList.add(t); c.textContent = t === 'm-start' ? 'S' : t === 'm-end' ? 'G' : '■'; }
+                else c.textContent = policy[s] || '';
+                pg.appendChild(c);
+            }
+            const sec = document.getElementById('evalSection');
+            sec.style.display = 'block';
+            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        let toastTimer = null;
+        function showToast(msg, type = '') {
+            const ex = document.querySelector('.toast'); if (ex) ex.remove();
+            if (toastTimer) clearTimeout(toastTimer);
+            const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg;
+            document.body.appendChild(t);
+            toastTimer = setTimeout(() => t.remove(), 2200);
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            const v = parseInt(document.getElementById('gridSize').value, 10);
+            if (isNaN(v) || v < 5 || v > 9) { showToast('Enter 5 to 9!', 'error'); return; }
+            generateGrid(v); showToast(`${v}x${v} grid generated!`, 'success');
+        });
+        document.getElementById('gridSize').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('generateBtn').click(); });
+
+        generateGrid(5); setMode('start');
+    </script>
+</body>
+
+</html>
