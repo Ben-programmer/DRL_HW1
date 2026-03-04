@@ -86,7 +86,7 @@ python app.py
 | 3 | 設定終點 | 模式選 `SET END`，點擊格子（紅色） |
 | 4 | 設定障礙物 | 模式選 `SET OBSTACLE`，點擊格子（灰色，最多 n-2 個） |
 | 5 | 執行計算 | 按 **▶ Value Iteration** |
-| 6 | 查看結果 | 頁面下方顯示 Value Matrix 與 Policy Matrix |
+| 6 | 查看結果 | 頁面主網格會顯示各狀態 V*(s) 與箭頭，**最佳路徑**將以藍色高亮顯示。下方則會顯示完整的 Value Matrix 與 Policy Matrix 數值表 |
 
 > 再次點擊障礙物格子可移除；按 **RESET** 清除所有設定。
 

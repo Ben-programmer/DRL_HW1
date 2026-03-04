@@ -126,4 +126,5 @@ HW1/
 | 1 | `app.py` | 將 `policy_evaluation` 改為 `value_iteration`，以 `max_a` 取代平均，迭代次數上限改為 10000 |
 | 2 | `templates/index.html` | 更新標題與按鈕文字為「Value Iteration」，修改公式與副標題顯示 |
 | 3 | `static/js/grid.js` | 實作 `renderMainGrid` 函式，於計算完成後直接在每個格子上標示數值與最佳行動方向 |
-| 4 | `static/css/style.css` | 新增 `.evaluated`、`.cell-val`、`.cell-arrow` 等樣式支援主格子的結果呈現 |
+| 4 | `static/css/style.css` | 新增 `.evaluated`、`.cell-val`、`.cell-arrow` 等樣式，並加上 `.optimal-path` 高亮最佳路線 |
+| 5 | `templates/index.html` | 在載入 `style.css` 和 `grid.js` 的路徑後加上 `?v=2` 版號，強制瀏覽器清除舊有快取，確保樣式更新生效 |
