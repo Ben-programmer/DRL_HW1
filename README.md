@@ -10,7 +10,7 @@
 
 ## 📋 專案說明
 
-本專案為一個 **Pixel Art 像素風** 互動式網格地圖，核心功能：
+本專案為一個**現代簡約暗色**互動式網格地圖，核心功能：
 
 - **網格生成**：支援 n×n（5 ≤ n ≤ 9）網格
 - **環境設定**：透過滑鼠點擊設定起點（S）、終點（G）與障礙物
@@ -27,7 +27,7 @@ HW1/
 ├── templates/
 │   └── index.html                # Flask 模板（本地開發）
 ├── static/
-│   ├── css/style.css             # Pixel Art 樣式
+│   ├── css/style.css             # 現代簡約暗色樣式
 │   └── js/grid.js                # 前端互動邏輯
 ├── docs/
 │   └── index.html                # 純靜態版本（GitHub Pages 部署用）
@@ -127,9 +127,9 @@ $$\pi^*(s) = \arg\max_a \sum_{s'} P(s'|s,a) \left[ R + \gamma V(s') \right]$$
 |------|------|
 | 後端（本地） | Python · Flask |
 | 前端 | Vanilla HTML/CSS/JS |
-| 字型 | Google Fonts（Press Start 2P、VT323） |
+| 字型 | Google Fonts（Inter） |
 | 部署 | GitHub Pages + GitHub Actions |
-| 風格 | Pixel Art / CRT 像素風 |
+| 風格 | Modern Minimal Dark Mode |
 
 ---
 

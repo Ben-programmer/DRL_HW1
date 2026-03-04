@@ -14,7 +14,7 @@
 |------|------|------|
 | 1 | `app.py` | 初始化 Flask 應用，建立 `/` 與 `/api/grid` 路由 |
 | 2 | `templates/index.html` | 主頁面 HTML，含 Grid 控制面板、模式選擇器、Legend |
-| 3 | `static/css/style.css` | Pixel Art 像素風 CSS，含 CRT 掃描線、glitch 動畫、脈衝發光效果 |
+| 3 | `static/css/style.css` | 現代簡約暗色 CSS，Inter 字體、圓角元件、漸層標題 |
 | 4 | `static/js/grid.js` | 前端互動邏輯：格子生成、點擊處理（起點/終點/障礙物）、Toast 通知 |
 
 **功能規格：**
@@ -87,7 +87,7 @@ HW1/
 ├── templates/
 │   └── index.html                # Flask 模板
 ├── static/
-│   ├── css/style.css             # Pixel Art 樣式
+│   ├── css/style.css             # 現代簡約暗色樣式
 │   └── js/grid.js                # 前端互動邏輯
 ├── docs/
 │   └── index.html                # 純靜態版（GitHub Pages 用）
@@ -96,4 +96,22 @@ HW1/
 │       └── deploy.yml            # CI/CD 自動部署
 ├── README.md                     # 專案說明
 └── log.md                        # 本檔案
+
+---
+
+### Phase 4 — UI 現代化重設計（2026-03-04）
+
+**目標**：將像素風格改為現代簡約暗色風格，提升可讀性。
+
+| 步驟 | 檔案 | 說明 |
+|------|------|------|
+| 1 | `static/css/style.css` | 完整重寫：Inter 字體、CSS 變數系統、圓角元件、移除 scanlines/glitch |
+| 2 | `templates/index.html` | 更新字體載入（Inter）、移除 scanlines div、現代化文字內容 |
+| 3 | `docs/index.html` | 同步更新內嵌 CSS 與 HTML（GitHub Pages 版） |
+
+**風格變更重點：**
+- 字型：`Press Start 2P` / `VT323` → `Inter`
+- 標題：漸層文字（白→綠），移除 glitch 動畫
+- 邊框：像素厚邊框 → 1px 細實線 + border-radius
+- 移除：CRT scanlines、text-shadow 發光、inset pixel shadow
 ```
