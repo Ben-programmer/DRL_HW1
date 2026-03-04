@@ -175,12 +175,38 @@ function renderMainGrid({ n: N, values, policy }) {
     const endS = endCell - 1;
     const obsSet = new Set([...obstacles].map(o => o - 1));
 
+    // Trace optimal path
+    const optimalPath = new Set();
+    let curr = startS;
+    let maxSteps = N * N; // prevent infinite loops
+    while (curr !== endS && maxSteps > 0) {
+        optimalPath.add(curr);
+        const a = policy[curr];
+        if (!a) break;
+        let r = Math.floor(curr / N);
+        let c = curr % N;
+        if (a === '↑') r = Math.max(0, r - 1);
+        else if (a === '↓') r = Math.min(N - 1, r + 1);
+        else if (a === '←') c = Math.max(0, c - 1);
+        else if (a === '→') c = Math.min(N - 1, c + 1);
+        const nextS = r * N + c;
+        if (curr === nextS || obsSet.has(nextS)) break; // stuck
+        curr = nextS;
+        maxSteps--;
+    }
+    if (curr === endS) optimalPath.add(endS);
+
     for (let s = 0; s < N * N; s++) {
         const id = s + 1;
         const cell = document.querySelector(`.grid-cell[data-id="${id}"]`);
         if (!cell) continue;
 
         cell.classList.add('evaluated');
+        if (optimalPath.has(s)) {
+            cell.classList.add('optimal-path');
+        } else {
+            cell.classList.remove('optimal-path');
+        }
 
         if (s === endS) {
             cell.innerHTML = `<span class="cell-label">G</span><span class="cell-val">${values[s].toFixed(3)}</span>`;

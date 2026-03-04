@@ -491,6 +491,29 @@ header {
   color: #f08080;
 }
 
+.grid-cell.optimal-path {
+  background: rgba(79, 142, 247, 0.15);
+  /* var(--accent-dim) */
+  border-color: rgba(79, 142, 247, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(79, 142, 247, 0.4);
+}
+
+.grid-cell.optimal-path .cell-arrow {
+  color: #4f8ef7;
+  /* var(--accent) */
+  text-shadow: 0 0 8px rgba(79, 142, 247, 0.5);
+}
+
+.grid-cell.start.optimal-path {
+  background: var(--start-dim);
+  border-color: rgba(46, 168, 75, 0.8);
+}
+
+.grid-cell.end.optimal-path {
+  background: var(--end-dim);
+  border-color: rgba(224, 69, 69, 0.8);
+}
+
 .grid-cell.start::before,
 .grid-cell.end::before {
   content: '';
