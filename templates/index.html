@@ -16,7 +16,7 @@
   <div class="container">
     <header>
       <h1 class="title">Grid Map Generator</h1>
-      <div class="subtitle">Deep RL HW1 — Interactive Policy Evaluation</div>
+      <div class="subtitle">Deep RL HW1 — Value Iteration &amp; Optimal Policy</div>
     </header>
 
     <div class="control-panel">
@@ -51,7 +51,7 @@
       <button class="mode-btn" id="modeEnd" onclick="setMode('end')">Set End</button>
       <button class="mode-btn" id="modeObstacle" onclick="setMode('obstacle')">Set Obstacle</button>
       <button class="mode-btn reset-btn" onclick="resetGrid()">Reset</button>
-      <button class="mode-btn eval-btn" id="evaluateBtn" onclick="runEvaluate()">▶ Evaluate</button>
+      <button class="mode-btn eval-btn" id="evaluateBtn" onclick="runEvaluate()">▶ Value Iteration</button>
     </div>
 
     <div class="legend">
@@ -87,8 +87,9 @@
     <!-- ===== EVALUATION RESULTS ===== -->
     <div id="evalSection" class="eval-section" style="display:none;">
       <div class="eval-header">
-        <span class="eval-title">Policy Evaluation Results</span>
-        <span class="eval-subtitle">&gamma; = 0.9 &nbsp;|&nbsp; convergence &theta; = 1e-6</span>
+        <span class="eval-title">Value Iteration — Optimal Policy &amp; V*(s)</span>
+        <span class="eval-subtitle">V*(s) = max<sub>a</sub>[R + &gamma;V*(s')] &nbsp;|&nbsp; &gamma; = 0.9 &nbsp;|&nbsp;
+          &theta; = 1e-6</span>
       </div>
       <div class="matrices-row">
         <!-- Value Matrix -->

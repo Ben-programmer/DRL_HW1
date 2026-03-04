@@ -114,4 +114,16 @@ HW1/
 - 標題：漸層文字（白→綠），移除 glitch 動畫
 - 邊框：像素厚邊框 → 1px 細實線 + border-radius
 - 移除：CRT scanlines、text-shadow 發光、inset pixel shadow
-```
+
+---
+
+### Phase 5 — 演算法升級：Value Iteration (2026-03-04)
+
+**目標**：將原先基於隨機策略的 Policy Evaluation 替換為 Value Iteration，直接計算最佳價值函數 V*(s) 與最佳策略 &pi;*(s)，並在主網格上同步顯示結果。
+
+| 步驟 | 檔案 | 說明 |
+|------|------|------|
+| 1 | `app.py` | 將 `policy_evaluation` 改為 `value_iteration`，以 `max_a` 取代平均，迭代次數上限改為 10000 |
+| 2 | `templates/index.html` | 更新標題與按鈕文字為「Value Iteration」，修改公式與副標題顯示 |
+| 3 | `static/js/grid.js` | 實作 `renderMainGrid` 函式，於計算完成後直接在每個格子上標示數值與最佳行動方向 |
+| 4 | `static/css/style.css` | 新增 `.evaluated`、`.cell-val`、`.cell-arrow` 等樣式支援主格子的結果呈現 |

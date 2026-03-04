@@ -116,7 +116,9 @@ function resetGrid() {
     endCell = null;
     obstacles = new Set();
     document.querySelectorAll('.grid-cell').forEach(c => {
-        c.classList.remove('start', 'end', 'obstacle');
+        c.classList.remove('start', 'end', 'obstacle', 'evaluated');
+        c.innerHTML = '';
+        c.textContent = c.dataset.id;
     });
     document.getElementById('evalSection').style.display = 'none';
     updateStatus();
@@ -133,7 +135,7 @@ function updateStatus() {
         `${obstacles.size} / ${maxObstacles}`;
 }
 
-// ===== EVALUATE =====
+// ===== VALUE ITERATION =====
 async function runEvaluate() {
     if (startCell === null || endCell === null) {
         showToast('Set START and END first!', 'error');
@@ -156,13 +158,43 @@ async function runEvaluate() {
             }),
         });
         const data = await res.json();
+        renderMainGrid(data);
         renderMatrices(data);
-        showToast('Evaluation complete!', 'success');
+        showToast('Value Iteration complete!', 'success');
     } catch (e) {
-        showToast('Evaluation failed!', 'error');
+        showToast('Value Iteration failed!', 'error');
     } finally {
         btn.classList.remove('loading');
-        btn.textContent = '▶ EVALUATE';
+        btn.textContent = '▶ Value Iteration';
+    }
+}
+
+// ===== UPDATE MAIN GRID WITH V(s) AND OPTIMAL POLICY =====
+function renderMainGrid({ n: N, values, policy }) {
+    const startS = startCell - 1;
+    const endS = endCell - 1;
+    const obsSet = new Set([...obstacles].map(o => o - 1));
+
+    for (let s = 0; s < N * N; s++) {
+        const id = s + 1;
+        const cell = document.querySelector(`.grid-cell[data-id="${id}"]`);
+        if (!cell) continue;
+
+        cell.classList.add('evaluated');
+
+        if (s === endS) {
+            cell.innerHTML = `<span class="cell-label">G</span><span class="cell-val">${values[s].toFixed(3)}</span>`;
+        } else if (obsSet.has(s)) {
+            cell.innerHTML = `<span class="cell-arrow">■</span>`;
+        } else if (s === startS) {
+            const arrow = policy[s] || '';
+            cell.innerHTML = `<span class="cell-label">S</span><span class="cell-val">${values[s].toFixed(3)}</span><span class="cell-arrow">${arrow}</span>`;
+        } else {
+            const arrow = policy[s] || '';
+            const v = values[s];
+            const colorClass = v > 0.05 ? 'val-pos' : v < -0.05 ? 'val-neg' : 'val-zero';
+            cell.innerHTML = `<span class="cell-val ${colorClass}">${v.toFixed(3)}</span><span class="cell-arrow">${arrow}</span>`;
+        }
     }
 }
 

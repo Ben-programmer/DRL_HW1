@@ -1,6 +1,6 @@
 # 🎮 Grid Map Generator — Deep RL HW1
 
-> 深度強化學習作業一：互動式 n×n 網格地圖生成器，支援策略評估（Policy Evaluation）與價值函數（Value Function）視覺化。
+> 深度強化學習作業一：互動式 n×n 網格地圖生成器，支援價值迭代（Value Iteration）與最佳策略（Optimal Policy）視覺化。
 
 [![Deploy to GitHub Pages](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/deploy.yml)
 
@@ -14,7 +14,7 @@
 
 - **網格生成**：支援 n×n（5 ≤ n ≤ 9）網格
 - **環境設定**：透過滑鼠點擊設定起點（S）、終點（G）與障礙物
-- **Policy Evaluation**：以迭代政策評估計算每個狀態的 V(s)
+- **Value Iteration**：以價值迭代計算最佳狀態價值 V*(s) 與最佳策略 &pi;*(s)
 - **雙矩陣視覺化**：同步顯示 **Value Matrix V(s)** 與 **Policy Matrix π(s)**
 
 ---
@@ -85,7 +85,7 @@ python app.py
 | 2 | 設定起點 | 模式選 `SET START`，點擊格子（綠色） |
 | 3 | 設定終點 | 模式選 `SET END`，點擊格子（紅色） |
 | 4 | 設定障礙物 | 模式選 `SET OBSTACLE`，點擊格子（灰色，最多 n-2 個） |
-| 5 | 執行評估 | 按 **▶ EVALUATE** |
+| 5 | 執行計算 | 按 **▶ Value Iteration** |
 | 6 | 查看結果 | 頁面下方顯示 Value Matrix 與 Policy Matrix |
 
 > 再次點擊障礙物格子可移除；按 **RESET** 清除所有設定。
@@ -94,17 +94,17 @@ python app.py
 
 ## 🧮 演算法說明
 
-### Policy Evaluation（策略評估）
+### Value Iteration（價值迭代）
 
-使用 **Iterative Policy Evaluation** 在 Uniform Random Policy 下計算收斂的狀態價值函數：
+使用 **Value Iteration** 算法計算最佳價值函數 $V^*(s)$：
 
-$$V(s) \leftarrow \sum_{a} \pi(a|s) \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma V(s') \right]$$
+$$V^*(s) \leftarrow \max_{a} \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma V^*(s') \right]$$
 
 | 參數 | 值 | 說明 |
 |------|----|------|
 | γ（折扣因子） | 0.9 | 未來獎勵折扣率 |
 | θ（收斂閾值） | 1e-6 | 迭代停止條件 |
-| Max iterations | 2000 | 最大迭代次數 |
+| Max iterations | 10000 | 最大迭代次數 |
 
 ### Reward 設計
 
@@ -114,10 +114,10 @@ $$V(s) \leftarrow \sum_{a} \pi(a|s) \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamm
 | 碰到障礙物 | -1.0 |
 | 其他移動 | -0.04 |
 
-### Greedy Policy（貪婪策略）
+### Optimal Policy（最佳策略）
 
-根據收斂的 V(s) 提取貪婪策略：
-$$\pi^*(s) = \arg\max_a \sum_{s'} P(s'|s,a) \left[ R + \gamma V(s') \right]$$
+根據收斂的 $V^*(s)$ 提取最佳策略：
+$$\pi^*(s) = \arg\max_a \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma V^*(s') \right]$$
 
 ---
 

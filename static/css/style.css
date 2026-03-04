@@ -438,6 +438,59 @@ header {
   cursor: pointer;
 }
 
+/* ===== EVALUATED STATE (Value Iteration) ===== */
+.grid-cell.evaluated {
+  flex-direction: column;
+  gap: 1px;
+  font-size: inherit;
+  cursor: default;
+}
+
+.cell-val {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent2);
+  line-height: 1;
+}
+
+.cell-val.val-pos {
+  color: #4eeaaa;
+}
+
+.cell-val.val-neg {
+  color: #f07070;
+}
+
+.cell-val.val-zero {
+  color: var(--text-muted);
+}
+
+.cell-arrow {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text);
+}
+
+.cell-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.grid-cell.start.evaluated .cell-val {
+  color: #6fdf8a;
+}
+
+.grid-cell.start.evaluated .cell-arrow {
+  color: #6fdf8a;
+}
+
+.grid-cell.end.evaluated .cell-val {
+  color: #f08080;
+}
+
 .grid-cell.start::before,
 .grid-cell.end::before {
   content: '';
