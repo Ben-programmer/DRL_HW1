@@ -435,6 +435,79 @@
             cursor: pointer
         }
 
+        .grid-cell.evaluated {
+            flex-direction: column;
+            gap: 1px;
+            font-size: inherit;
+            cursor: default
+        }
+
+        .cell-val {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent2);
+            line-height: 1
+        }
+
+        .cell-val.val-pos {
+            color: #4eeaaa;
+        }
+
+        .cell-val.val-neg {
+            color: #f07070;
+        }
+
+        .cell-val.val-zero {
+            color: var(--text-muted);
+        }
+
+        .cell-arrow {
+            font-size: 22px;
+            line-height: 1;
+            color: var(--text)
+        }
+
+        .cell-label {
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--text-dim);
+            letter-spacing: 0.5px
+        }
+
+        .grid-cell.start.evaluated .cell-val {
+            color: #6fdf8a;
+        }
+
+        .grid-cell.start.evaluated .cell-arrow {
+            color: #6fdf8a;
+        }
+
+        .grid-cell.end.evaluated .cell-val {
+            color: #f08080;
+        }
+
+        .grid-cell.optimal-path {
+            background: rgba(79, 142, 247, 0.15);
+            border-color: rgba(79, 142, 247, 0.6);
+            box-shadow: inset 0 0 0 1px rgba(79, 142, 247, 0.4)
+        }
+
+        .grid-cell.optimal-path .cell-arrow {
+            color: #4f8ef7;
+            text-shadow: 0 0 8px rgba(79, 142, 247, 0.5)
+        }
+
+        .grid-cell.start.optimal-path {
+            background: var(--start-dim);
+            border-color: rgba(46, 168, 75, 0.8)
+        }
+
+        .grid-cell.end.optimal-path {
+            background: var(--end-dim);
+            border-color: rgba(224, 69, 69, 0.8)
+        }
+
         .grid-cell.start::before,
         .grid-cell.end::before {
             content: '';
@@ -720,7 +793,7 @@
     <div class="container">
         <header>
             <h1 class="title">Grid Map Generator</h1>
-            <div class="subtitle">Deep RL HW1 — Interactive Policy Evaluation</div>
+            <div class="subtitle">Deep RL HW1 — Value Iteration &amp; Optimal Policy</div>
         </header>
 
         <div class="control-panel">
@@ -749,7 +822,7 @@
             <button class="mode-btn" id="modeEnd" onclick="setMode('end')">Set End</button>
             <button class="mode-btn" id="modeObstacle" onclick="setMode('obstacle')">Set Obstacle</button>
             <button class="mode-btn reset-btn" onclick="resetGrid()">Reset</button>
-            <button class="mode-btn eval-btn" id="evaluateBtn" onclick="runEvaluate()">&#9654; Evaluate</button>
+            <button class="mode-btn eval-btn" id="evaluateBtn" onclick="runEvaluate()">&#9654; Value Iteration</button>
         </div>
 
         <div class="legend">
@@ -776,8 +849,9 @@
 
         <div id="evalSection" class="eval-section" style="display:none;">
             <div class="eval-header">
-                <span class="eval-title">Policy Evaluation Results</span>
-                <span class="eval-subtitle">&gamma; = 0.9 &nbsp;|&nbsp; convergence &theta; = 1e-6</span>
+                <span class="eval-title">Value Iteration — Optimal Policy &amp; V*(s)</span>
+                <span class="eval-subtitle">V*(s) = max<sub>a</sub>[R + &gamma;V*(s')] &nbsp;|&nbsp; &gamma; = 0.9
+                    &nbsp;|&nbsp; &theta; = 1e-6</span>
             </div>
             <div class="matrices-row">
                 <div class="matrix-block">
@@ -793,7 +867,7 @@
     </div>
 
     <script>
-        // ===== POLICY EVALUATION (pure JS - same logic as Python backend) =====
+        // ===== VALUE ITERATION (pure JS - same logic as Python backend) =====
         const ACTIONS = ['U', 'D', 'L', 'R'];
         const ARROW = { U: '↑', D: '↓', L: '←', R: '→' };
 
@@ -806,7 +880,7 @@
             return row * n + col;
         }
 
-        function policyEvaluation(n, startS, endS, obsSet, gamma = 0.9, theta = 1e-6, maxIter = 2000) {
+        function valueIteration(n, startS, endS, obsSet, gamma = 0.9, theta = 1e-6, maxIter = 10000) {
             const total = n * n;
             const terminal = new Set([endS, ...obsSet]);
             let V = new Array(total).fill(0);
@@ -818,13 +892,14 @@
                 const newV = [...V];
                 for (let s = 0; s < total; s++) {
                     if (terminal.has(s)) continue;
-                    let val = 0;
+                    let bestVal = -Infinity;
                     for (const a of ACTIONS) {
                         const s2 = getNeighbor(s, n, a);
                         const r = s2 === endS ? 1.0 : obsSet.has(s2) ? -1.0 : -0.04;
-                        val += 0.25 * (r + gamma * V[s2]);
+                        const q = r + gamma * V[s2];
+                        if (q > bestVal) bestVal = q;
                     }
-                    newV[s] = val;
+                    newV[s] = bestVal;
                     delta = Math.max(delta, Math.abs(newV[s] - V[s]));
                 }
                 V = newV;
@@ -904,7 +979,11 @@
 
         function resetGrid() {
             startCell = null; endCell = null; obstacles = new Set();
-            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('start', 'end', 'obstacle'));
+            document.querySelectorAll('.grid-cell').forEach(c => {
+                c.classList.remove('start', 'end', 'obstacle', 'evaluated', 'optimal-path');
+                c.innerHTML = '';
+                c.textContent = c.dataset.id;
+            });
             document.getElementById('evalSection').style.display = 'none';
             updateStatus(); showToast('Grid reset!', 'success');
         }
@@ -924,11 +1003,57 @@
             setTimeout(() => {
                 const startS = startCell - 1, endS = endCell - 1;
                 const obsSet = new Set([...obstacles].map(o => o - 1));
-                const { values, policy } = policyEvaluation(n, startS, endS, obsSet);
+                const { values, policy } = valueIteration(n, startS, endS, obsSet);
+                renderMainGrid(n, values, policy, startS, endS, obsSet);
                 renderMatrices(n, values, policy, startS, endS, obsSet);
-                btn.classList.remove('loading'); btn.textContent = '▶ EVALUATE';
-                showToast('Evaluation complete!', 'success');
+                btn.classList.remove('loading'); btn.textContent = '▶ Value Iteration';
+                showToast('Value Iteration complete!', 'success');
             }, 30);
+        }
+
+        function renderMainGrid(N, values, policy, startS, endS, obsSet) {
+            const optimalPath = new Set();
+            let curr = startS;
+            let maxSteps = N * N;
+            while (curr !== endS && maxSteps > 0) {
+                optimalPath.add(curr);
+                const a = policy[curr];
+                if (!a) break;
+                let r = Math.floor(curr / N), c = curr % N;
+                if (a === '↑') r = Math.max(0, r - 1);
+                else if (a === '↓') r = Math.min(N - 1, r + 1);
+                else if (a === '←') c = Math.max(0, c - 1);
+                else if (a === '→') c = Math.min(N - 1, c + 1);
+                const nextS = r * N + c;
+                if (curr === nextS || obsSet.has(nextS)) break;
+                curr = nextS;
+                maxSteps--;
+            }
+            if (curr === endS) optimalPath.add(endS);
+
+            for (let s = 0; s < N * N; s++) {
+                const id = s + 1;
+                const cell = document.querySelector(`.grid-cell[data-id="${id}"]`);
+                if (!cell) continue;
+
+                cell.classList.add('evaluated');
+                if (optimalPath.has(s)) cell.classList.add('optimal-path');
+                else cell.classList.remove('optimal-path');
+
+                if (s === endS) {
+                    cell.innerHTML = `<span class="cell-label">G</span><span class="cell-val">${values[s].toFixed(3)}</span>`;
+                } else if (obsSet.has(s)) {
+                    cell.innerHTML = `<span class="cell-arrow">■</span>`;
+                } else if (s === startS) {
+                    const arrow = policy[s] || '';
+                    cell.innerHTML = `<span class="cell-label">S</span><span class="cell-val">${values[s].toFixed(3)}</span><span class="cell-arrow">${arrow}</span>`;
+                } else {
+                    const arrow = policy[s] || '';
+                    const v = values[s];
+                    const colorClass = v > 0.05 ? 'val-pos' : v < -0.05 ? 'val-neg' : 'val-zero';
+                    cell.innerHTML = `<span class="cell-val ${colorClass}">${v.toFixed(3)}</span><span class="cell-arrow">${arrow}</span>`;
+                }
+            }
         }
 
         function renderMatrices(N, values, policy, startS, endS, obsSet) {
@@ -945,13 +1070,13 @@
                 const t = cellType(s);
                 if (t) {
                     c.classList.add(t);
-                    if (t === 'm-start') c.innerHTML = '<span>S</span><span class="val-num">' + values[s].toFixed(2) + '</span>';
-                    else if (t === 'm-end') c.innerHTML = '<span>G</span><span class="val-num">' + values[s].toFixed(2) + '</span>';
+                    if (t === 'm-start') c.innerHTML = '<span>S</span><span class="val-num">' + values[s].toFixed(4) + '</span>';
+                    else if (t === 'm-end') c.innerHTML = '<span>G</span><span class="val-num">' + values[s].toFixed(4) + '</span>';
                     else c.innerHTML = '<span>■</span>';
                 } else {
                     const v = values[s];
                     c.classList.add(v > 0.05 ? 'val-pos' : v < -0.05 ? 'val-neg' : 'val-zero');
-                    c.innerHTML = `<span class="val-num">${v.toFixed(3)}</span>`;
+                    c.innerHTML = `<span class="val-num">${v.toFixed(4)}</span>`;
                 }
                 vg.appendChild(c);
             }
