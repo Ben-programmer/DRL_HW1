@@ -4,7 +4,7 @@
 
 [![Deploy to GitHub Pages](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/deploy.yml)
 
-🌐 **Live Demo**: [https://YOUR_USERNAME.github.io/YOUR_REPO](https://YOUR_USERNAME.github.io/YOUR_REPO)
+🌐 **Live Demo**: [https://ben-programmer.github.io/DRL_HW1/]
 
 ---
 
